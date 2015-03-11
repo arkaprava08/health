@@ -12,6 +12,7 @@ class Health extends REST_Controller
         
         $this->load->database();
         $this->load->library('session');
+
         // Configure limits on our controller methods. Ensure
         // you have created the 'limits' table and enabled 'limits'
         // within application/config/rest.php
@@ -68,9 +69,11 @@ class Health extends REST_Controller
         
         
         if (isset($this->session)) {
+
+            $this->session->set_userdata('loggedin', 'false');
+
             $this->response($this->session->all_userdata()) ;
 
-            $this->session->sess_destroy();
 
 
             //$this->response(array('error' => 'Successfully Logged Out'),200);
