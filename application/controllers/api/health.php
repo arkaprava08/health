@@ -113,10 +113,9 @@ class Health extends REST_Controller
 
 
         //if id of patient is passed
-        if(isset($this->request->body['id']))
+        if(isset($this->request->body['patientid']))
         {
-            if(isset($this->request->body['patientid']) 
-                && isset($this->request->body['bodytemperature'])
+            if(isset($this->request->body['bodytemperature'])
                 && isset($this->request->body['bloodpressure'])
                 && isset($this->request->body['symptoms'])
                 && isset($this->request->body['comment']))
@@ -128,13 +127,24 @@ class Health extends REST_Controller
                 $symptoms = $this->request->body['symptoms'];
                 $comment = $this->request->body['comment'];
 
+
+                $sql = "INSERT INTO `patientdata`( `patientid`, `userid`, `bodytemperature`, `bloodpressure`, `symptoms`, `comment`, `insertedDate`) "
+                                                ."VALUES (".$patientid.",".$userid.",".$bodytemperature.",".$bloodpressure.",'".$symptoms."','".$comment."', NOW())";
+
+
+                $query = $this->db->query($sql);
+
+                if($query)
+                {
+                    $this->response(array('error' => 'No error'),200); 
+                }
+
             }
             else
             {
-                $this->response(array('error' => 'Data not provided'),400); 
+                //$this->response(array('error' => 'Data not provided'),400); 
             }
         }
-        //else id is not passed i.e. new data
         else
         {
             if (isset($this->request->body['name']) 
@@ -191,6 +201,11 @@ class Health extends REST_Controller
 
 
                     $query = $this->db->query($sql);
+
+                    if($query)
+                    {
+                        $this->response(array('error' => 'No error'),200); 
+                    }
 
                     $this->db->trans_complete();
                 }
