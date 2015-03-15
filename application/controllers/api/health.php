@@ -132,9 +132,9 @@ class Health extends REST_Controller
                                                 ."VALUES (".$patientid.",".$userid.",".$bodytemperature.",".$bloodpressure.",'".$symptoms."','".$comment."', NOW())";
 
 
-                $query = $this->db->query($sql);
+                $query = $this->db->simple_query($sql);
 
-                if($query)
+                if($query == 1)
                 {
                     $this->response(array('error' => 'No error'),200); 
                 }
@@ -142,7 +142,7 @@ class Health extends REST_Controller
             }
             else
             {
-                //$this->response(array('error' => 'Data not provided'),400); 
+                $this->response(array('error' => 'Data not provided'),400); 
             }
         }
         else
@@ -152,9 +152,12 @@ class Health extends REST_Controller
                 && isset($this->request->body['gender'])
                 && isset($this->request->body['address'])
                 && isset($this->request->body['bodytemperature'])
-                && isset($this->request->body['bloodpressure'])
+                && isset($this->request->body['bp_sp'])
+                && isset($this->request->body['bp_dp'])
                 && isset($this->request->body['symptoms'])
-                && isset($this->request->body['comment'])) {
+                && isset($this->request->body['comment'])
+                && isset($this->request->body['latitude'])
+                && isset($this->request->body['longitude'])) {
 
 
                 $name = $this->request->body['name'];
@@ -162,52 +165,55 @@ class Health extends REST_Controller
                 $gender = $this->request->body['gender'];
                 $address = $this->request->body['address'];
                 $bodytemperature = $this->request->body['bodytemperature'];
-                $bloodpressure = $this->request->body['bloodpressure'];
+                $bp_sp = $this->request->body['bp_sp'];
+                $bp_dp = $this->request->body['bp_dp'];
                 $symptoms = $this->request->body['symptoms'];
                 $comment = $this->request->body['comment'];
+                $latitude = $this->request->body['latitude'];
+                $longitude = $this->request->body['longitude'];
 
                 $patientid;
 
-                $checkDataRedundancy = "SELECT `id` FROM `patients` WHERE  name ='"
+                $checkDataRedundancy = "SELECT * FROM patients WHERE  name ='"
                                         .$name."' and age =".$age." and gender='"
                                         .$gender."' and address='".$address."' and userid=".$userid;
 
-                $query = $this->db->query($checkDataRedundancy);
+                $q = $this->db->query($checkDataRedundancy);
 
-                if($query->num_rows() > 0)
+                if($q->num_rows() > 0)
                 {
                         $this->response(array('error' => 'Data already exists'),400); 
                 }
                 else
                 {
-                    $this->db->trans_start();
+                    //$this->db->trans_start();
 
                     $insertData = "INSERT INTO `patients`( `name`, `age`, `gender`, `address`, `userid`) "
                         ."VALUES ('".$name."', ".$age.",'".$gender."','".$address."',".$userid.");";
 
-                    $query = $this->db->query($insertData);
+                    $query1 = $this->db->simple_query($insertData);
 
-                    $getUniqueId = "SELECT `id` FROM `patients` WHERE  name ='".$name."' and age =".$age." and gender='".$gender."' and address='".$address."' and userid=".$userid;
+                    $getUniqueId = "SELECT * FROM patients WHERE  name ='".$name."' and age =".$age." and gender='".$gender."' and address='".$address."' and userid=".$userid;
 
-                    $query = $this->db->query($getUniqueId);
+                    $query2 = $this->db->query($getUniqueId);
 
-                    foreach ($query->result() as $row)
+                    foreach ($query2->result() as $row)
                     {
                         $patientid = $row->id;
                     }
                     //we have $patientid
-                    $sql = "INSERT INTO `patientdata`( `patientid`, `userid`, `bodytemperature`, `bloodpressure`, `symptoms`, `comment`, `insertedDate`) "
-                                                ."VALUES (".$patientid.",".$userid.",".$bodytemperature.",".$bloodpressure.",'".$symptoms."','".$comment."', NOW())";
+                    $sql = "INSERT INTO `patientdata`( `patientid`, `userid`, `bodytemperature`, `bp_sp`, `bp_dp`, `symptoms`, `comment`, `insertedDate`) "
+                                                ."VALUES (".$patientid.",".$userid.",".$bodytemperature.",".$bp_sp.",".$bp_dp.",'".$symptoms."','".$comment."', NOW())";
 
 
-                    $query = $this->db->query($sql);
+                    $query3 = $this->db->query($sql);
 
-                    if($query)
+                    if($query3 == 1)
                     {
-                        $this->response(array('error' => 'No error'),200); 
+                        $this->response(array('error' => 'No error dude'),200); 
                     }
 
-                    $this->db->trans_complete();
+                    //$this->db->trans_complete();
                 }
 
                 
