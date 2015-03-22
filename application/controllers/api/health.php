@@ -12,6 +12,7 @@ class Health extends REST_Controller {
     function __construct() {
         parent::__construct();
 
+        $this->load->database();
         $this->load->library('session');
     }
 
@@ -19,6 +20,41 @@ class Health extends REST_Controller {
         echo "testing";
     }
 
+    public function getAction($bodytemperatue, $bp_sp, $bp_dp) {
+        
+        $action = "All fine";
+        $consultation = 0;
+        
+        if ($bodytemperatue > 100) {
+            $action = "You have high fever. Please visit doctor";
+            $consultation = 1;
+        }
+        else if($bodytemperatue < 90){
+            $action = "You have low fever. Please visit doctor";
+            $consultation = 1;
+        }
+        
+        if ($bp_sp > 60) {
+            $action = "You have high bloodpressure. Please visit doctor";
+            $consultation = 1;
+        }
+        else if($bp_sp < 40){
+            $action = "You have low bloodpressure. Please visit doctor";
+            $consultation = 1;
+        }
+        
+        if ($bp_dp > 60) {
+            $action = "You have high bloodpressure. Please visit doctor";
+            $consultation = 1;
+        }
+        else if($bp_dp < 40){
+            $action = "You have low bloodpressure. Please visit doctor";
+            $consultation = 1;
+        }
+        
+        return ['action'=>$action,'consultation'=> $consultation];
+    }
+    
     //check if loggedin or not
     public function isLoggedIn() {
         if ($this->session->userdata('loggedin')) {
@@ -36,9 +72,7 @@ class Health extends REST_Controller {
             $password = $this->request->body['password'];
 
 
-
             $query = $this->db->query('SELECT * FROM users WHERE username = "' . $username . '" AND password = "' . $password . '"');
-
             $userid;
             foreach ($query->result() as $row) {
                 $userid = $row->id;
@@ -50,9 +84,6 @@ class Health extends REST_Controller {
                 $this->session->set_userdata('loggedin', true);
 
                 $this->response(array('userid' => $userid), 200);
-
-
-                //print_r($this->session->all_userdata()) ;
             } else {
                 $this->response(array('error' => 'Username/Password invalid'), 401);
             }
@@ -70,8 +101,6 @@ class Health extends REST_Controller {
 
             $this->session->sess_destroy();
 
-            //$this->response($this->session->all_userdata()) ;
-
 
 
             $this->response(array('error' => 'Successfully Logged Out'), 200);
@@ -82,8 +111,6 @@ class Health extends REST_Controller {
 
     //insert data
     public function insert_post() {
-
-        $this->load->database();
 //        if (!$this->isLoggedIn()) {
 //            $this->response(array('error' => 'User not logged in '), 401);
 //        }
@@ -108,15 +135,25 @@ class Health extends REST_Controller {
                 $latitude = $this->request->body['latitude'];
                 $longitude = $this->request->body['longitude'];
                 $userid = $this->request->body['userid'];
+                
+                
+                $nextAction =  $this->getAction($bodytemperature, $bp_sp, $bp_dp);
 
-                $sql = "INSERT INTO `patientdata`( `patientid`, `userid`, `bodytemperature`, `bp_sp`, `bp_dp`, `symptoms`, `comment`,`latitude`,`longitude`, `insertedDate`) "
-                        . "VALUES (" . $patientid . "," . $userid . "," . $bodytemperature . "," . $bp_sp . "," . $bp_dp . ",'" . $symptoms . "','" . $comment . "'," . $latitude . "," . $longitude . ", NOW())";
+                $sql = "CALL insertWithPatientId(" . $patientid . ","
+                        . $bodytemperature . ","
+                        . $bp_sp . ","
+                        . $bp_dp . ",'" . $symptoms . "','" . $comment . "'," . $latitude . "," . $longitude . "," . $userid . ",".$nextAction['consultation'].")";
+            
+                
+                $query = $this->db->query($sql);
 
+                if ($query->num_rows() > 0) {
+                    $row = $query->row();
 
-                $query = $this->db->simple_query($sql);
-
-                if ($query == 1) {
-                    $this->response(array('error' => 'No error'), 200);
+                    $patientDataId = $row->patientDataId;
+                    
+                    
+                    $this->response(array('error' => 'No error', 'patientDataId' => $patientDataId, 'action' => $nextAction['action']), 200);
                 } else {
                     $this->response(array('error' => 'Server error'), 500);
                 }
@@ -142,50 +179,37 @@ class Health extends REST_Controller {
                 $longitude = $this->request->body['longitude'];
                 $userid = $this->request->body['userid'];
 
-                $patientid;
+//                $q = $this->db->query("SELECT * FROM patients WHERE  name ='"
+//                        . $name . "' and dob ='" . $dob . "' and gender='"
+//                        . $gender . "' and address='" . $address . "' and height="
+//                        . $height . " and weight= " . $weight . " and userid=" . $userid);
+//
+//                if ($q->num_rows() > 0) {
+//                    $this->response(array('error' => 'Data already exists'), 400);
+//                } else {
 
-                $q = $this->db->query("SELECT * FROM patients WHERE  name ='"
-                        . $name . "' and dob ='" . $dob . "' and gender='"
-                        . $gender . "' and address='" . $address . "' and height="
-                        . $height . " and weight= " . $weight . " and userid=" . $userid);
+                $nextAction =  $this->getAction($bodytemperature, $bp_sp, $bp_dp);
+                
+                $sql = "CALL insertWithoutPatientId('" . $name . "', '" . $dob . "','" . $gender . "'," . $height . "," . $weight . ",'" . $address . "',"
+                        . $bodytemperature . ","
+                        . $bp_sp . ","
+                        . $bp_dp . ",'" . $symptoms . "','" . $comment . "'," . $latitude . "," . $longitude . "," . $userid . ",".$nextAction['consultation'].")";
 
-                if ($q->num_rows() > 0) {
-                    $this->response(array('error' => 'Data already exists'), 400);
+                $query = $this->db->query($sql);
+
+                if ($query->num_rows() > 0) {
+                    $row = $query->row();
+
+                    $patientId = $row->patientId;
+                    $patientDataId = $row->patientDataId;
+                    
+                    $this->response(array('error' => 'No error'
+                        , 'patientId' => $patientId
+                            , 'patientDataId' => $patientDataId, 'action' => $nextAction['action']), 200);
                 } else {
-                    //$this->db->trans_start();
-                    $this->db->trans_begin();
-
-                    $query1 = $this->db->query("INSERT INTO `patients`( `name`, `dob`, `gender`,`height`,`weight`, `address`, `userid`) "
-                            . "VALUES ('" . $name . "', '" . $dob . "','" . $gender . "'," . $height . "," . $weight . ",'" . $address . "'," . $userid . ");");
-
-
-                    $query2 = $this->db->query("SELECT * FROM patients WHERE  name ='" . $name . "' and dob ='" . $dob . "' and gender='" . $gender . "' and address='" . $address . "' and userid=" . $userid);
-
-
-
-                    foreach ($query2->result() as $row) {
-                        $patientid = $row->id;
-                    }
-                    //we have $patientid
-                    $sql = "INSERT INTO `patientdata`( `patientid`, `userid`, `bodytemperature`, `bp_sp`, `bp_dp`, `symptoms`, `comment`,`latitude`,`longitude`, `insertedDate`) "
-                            . "VALUES (" . $patientid . "," . $userid . "," . $bodytemperature . "," . $bp_sp . "," . $bp_dp . ",'" . $symptoms . "','" . $comment . "'," . $latitude . "," . $longitude . ", NOW())";
-
-                    $query3 = $this->db->query($sql);
-
-                    if ($this->db->trans_status() === FALSE) {
-                        $this->db->trans_rollback();
-                    } else {
-                        $this->db->trans_commit();
-                    }
-                    
-                    if ($query3 == 1) {
-                        $this->response(array('error' => 'No error', 'patientid' => $patientid), 200);
-                    } else {
-                        $this->response(array('error' => 'Server error'), 500);
-                    }
-                    
-                    $this->db->trans_complete();
+                    $this->response(array('error' => 'Server error'), 500);
                 }
+                //}
             } else {
                 $this->response(array('error' => 'Data not provided'), 400);
             }
@@ -203,6 +227,10 @@ class Health extends REST_Controller {
         $q = $this->db->query($fetch);
 
         $this->response($q->result(), 200);
+    }
+    
+    public function getPatientsList_get($param) {
+        
     }
 
 }
