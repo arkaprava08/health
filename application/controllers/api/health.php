@@ -229,8 +229,17 @@ class Health extends REST_Controller {
         $this->response($q->result(), 200);
     }
     
-    public function getPatientsList_get($param) {
+    public function getPatientsListForUser_get($param) {
+        if (!$this->get('id')) {
+            $this->response(array('error=>id not provided'), 400);
+        }
         
+        $id = $this->get('id');
+        $fetch = "SELECT * FROM consultation WHERE assignedToUser=".$id." AND isChecked = 0";
+
+        $q = $this->db->query($fetch);
+
+        $this->response($q->result(), 200);
     }
 
 }
