@@ -5,30 +5,34 @@ if (!defined('BASEPATH'))
 
 class Health extends CI_Controller {
 
-    /**
-     * Index Page for this controller.
-     *
-     * Maps to the following URL
-     * 		http://example.com/index.php/welcome
-     * 	- or -  
-     * 		http://example.com/index.php/welcome/index
-     * 	- or -
-     * Since this controller is set as the default controller in 
-     * config/routes.php, it's displayed at http://example.com/
-     *
-     * So any other public methods not prefixed with an underscore will
-     * map to /index.php/welcome/<method_name>
-     * @see http://codeigniter.com/user_guide/general/urls.html
-     */
     public function index() {
         $this->load->view('welcome_message');
     }
 
     public function admin() {
+
+        $this->load->database();
+
+        //print_r($_POST);
+
+        if (isset($_POST['user'])) {
+            if (isset($_POST['patients'])) {
+
+                $sql = "UPDATE `consultation` SET `assignedToUser`=1 WHERE `patientId` IN (" . implode(",", $_POST['patients']) . ")";
+
+                $query = $this->db->simple_query($sql);
+
+                if ($query == 1) {
+                    echo "<h2>Assigned successfully !!</h2>";
+                } else {
+                    echo "<h2>Sorry, couldnot be assigned !!!!</h2>";
+                }
+            } else {
+                echo "<h2>Please select patients !!!!</h2>";
+            }
+        }
+
         $this->load->view('admin');
     }
 
 }
-
-/* End of file welcome.php */
-/* Location: ./application/controllers/welcome.php */
