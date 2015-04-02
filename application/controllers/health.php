@@ -18,7 +18,7 @@ class Health extends CI_Controller {
         if (isset($_POST['user'])) {
             if (isset($_POST['patients'])) {
 
-                $sql = "UPDATE `consultation` SET `assignedToUser`=1 WHERE `patientId` IN (" . implode(",", $_POST['patients']) . ")";
+                $sql = "UPDATE `consultation` SET `assignedToUser`=".$_POST['user']." WHERE `patientId` IN (" . implode(",", $_POST['patients']) . ")";
 
                 $query = $this->db->simple_query($sql);
 
@@ -33,6 +33,13 @@ class Health extends CI_Controller {
         }
 
         $this->load->view('admin');
+    }
+    
+    public function test() {
+        
+        $this->load->database();
+        
+        $this->load->view('test');
     }
 
 }

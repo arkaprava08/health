@@ -52,7 +52,7 @@ class Health extends REST_Controller {
         return ['action' => $action, 'consultation' => $consultation];
     }
 
-    //check if loggedin or not
+//check if loggedin or not
     public function isLoggedIn() {
         if ($this->session->userdata('loggedin')) {
             return true;
@@ -61,7 +61,7 @@ class Health extends REST_Controller {
         return false;
     }
 
-    //login service
+//login service
     public function login_post() {
 
         if (isset($this->request->body['username']) && isset($this->request->body['password'])) {
@@ -89,7 +89,7 @@ class Health extends REST_Controller {
         }
     }
 
-    //logout service
+//logout service
     public function logout_get() {
 
         if ($this->isLoggedIn()) {
@@ -106,7 +106,7 @@ class Health extends REST_Controller {
         }
     }
 
-    //insert data
+//insert data
     public function insert_post() {
 //        if (!$this->isLoggedIn()) {
 //            $this->response(array('error' => 'User not logged in '), 401);
@@ -119,12 +119,13 @@ class Health extends REST_Controller {
 //        } else {
 //            $this->response(array('error' => 'User not logged in '), 401);
 //        }
-        //if id of patient is passed
+//if id of patient is passed
         if (isset($this->request->body['patientid'])) {
-            if (isset($this->request->body['bodytemperature']) && isset($this->request->body['bp_sp']) && isset($this->request->body['bp_dp']) && isset($this->request->body['symptoms']) && isset($this->request->body['comment']) && isset($this->request->body['latitude']) && isset($this->request->body['longitude']) && isset($this->request->body['userid'])) {
+            if (isset($this->request->body['bodytemperature']) && isset($this->request->body['bodyTemperatureTypeId']) && isset($this->request->body['bp_sp']) && isset($this->request->body['bp_dp']) && isset($this->request->body['symptoms']) && isset($this->request->body['comment']) && isset($this->request->body['latitude']) && isset($this->request->body['longitude']) && isset($this->request->body['userid'])) {
 
                 $patientid = $this->request->body['patientid'];
                 $bodytemperature = $this->request->body['bodytemperature'];
+                $bodyTemperatureTypeId =  $this->request->body['bodyTemperatureTypeId'];
                 $bp_sp = $this->request->body['bp_sp'];
                 $bp_dp = $this->request->body['bp_dp'];
                 $symptoms = $this->request->body['symptoms'];
@@ -133,11 +134,11 @@ class Health extends REST_Controller {
                 $longitude = $this->request->body['longitude'];
                 $userid = $this->request->body['userid'];
 
-
                 $nextAction = $this->getAction($bodytemperature, $bp_sp, $bp_dp);
 
                 $sql = "CALL insertWithPatientId(" . $patientid . ","
                         . $bodytemperature . ","
+                        . $bodyTemperatureTypeId . ","
                         . $bp_sp . ","
                         . $bp_dp . ",'" . $symptoms . "','" . $comment . "'," . $latitude . "," . $longitude . "," . $userid . "," . $nextAction['consultation'] . ")";
 
@@ -158,7 +159,7 @@ class Health extends REST_Controller {
                 $this->response(array('error' => 'Data not provided'), 400);
             }
         } else {
-            if (isset($this->request->body['name']) && isset($this->request->body['dob']) && isset($this->request->body['gender']) && isset($this->request->body['height']) && isset($this->request->body['weight']) && isset($this->request->body['address']) && isset($this->request->body['bodytemperature']) && isset($this->request->body['bp_sp']) && isset($this->request->body['bp_dp']) && isset($this->request->body['symptoms']) && isset($this->request->body['comment']) && isset($this->request->body['latitude']) && isset($this->request->body['longitude']) && isset($this->request->body['userid'])) {
+            if (isset($this->request->body['name']) && isset($this->request->body['dob']) && isset($this->request->body['gender']) && isset($this->request->body['height']) && isset($this->request->body['weight']) && isset($this->request->body['address']) && isset($this->request->body['bodytemperature']) && isset($this->request->body['bodyTemperatureTypeId']) && isset($this->request->body['bp_sp']) && isset($this->request->body['bp_dp']) && isset($this->request->body['symptoms']) && isset($this->request->body['comment']) && isset($this->request->body['latitude']) && isset($this->request->body['longitude']) && isset($this->request->body['userid'])) {
 
 
                 $name = $this->request->body['name'];
@@ -168,6 +169,7 @@ class Health extends REST_Controller {
                 $weight = $this->request->body['weight'];
                 $address = $this->request->body['address'];
                 $bodytemperature = $this->request->body['bodytemperature'];
+                $bodyTemperatureTypeId =  $this->request->body['bodyTemperatureTypeId'];
                 $bp_sp = $this->request->body['bp_sp'];
                 $bp_dp = $this->request->body['bp_dp'];
                 $symptoms = $this->request->body['symptoms'];
@@ -189,6 +191,7 @@ class Health extends REST_Controller {
 
                 $sql = "CALL insertWithoutPatientId('" . $name . "', '" . $dob . "','" . $gender . "'," . $height . "," . $weight . ",'" . $address . "',"
                         . $bodytemperature . ","
+                        . $bodyTemperatureTypeId . ","
                         . $bp_sp . ","
                         . $bp_dp . ",'" . $symptoms . "','" . $comment . "'," . $latitude . "," . $longitude . "," . $userid . "," . $nextAction['consultation'] . ")";
 
@@ -206,7 +209,7 @@ class Health extends REST_Controller {
                 } else {
                     $this->response(array('error' => 'Server error'), 500);
                 }
-                //}
+//}
             } else {
                 $this->response(array('error' => 'Data not provided'), 400);
             }
@@ -238,6 +241,34 @@ class Health extends REST_Controller {
                 WHERE c.assignedToUser=" . $id . " AND c.isChecked = 0";
 
         $q = $this->db->query($fetch);
+
+        $this->response($q->result(), 200);
+    }
+
+    public function insertPatientActionDetails_post() {
+        if (isset($this->request->body['patientdataid']) && isset($this->request->body['actiondetails'])) {
+
+            $patientdataid = $this->request->body['patientdataid'];
+            $actiondetails = $this->request->body['actiondetails'];
+
+            $insert = "INSERT INTO `action`(`patientdataid`, `actiondetails`, `date`) "
+                    . "VALUES (" . $patientdataid . ",'" . $actiondetails . "',NOW())";
+
+            $q = $this->db->simple_query($insert);
+
+            if ($q == 1) {
+                $this->response(['error' => 'No error'], 200);
+            } else {
+                $this->response(['error' => 'Failed to insert data'], 500);
+            }
+        } else {
+            $this->response(array('error' => 'Data not provided'), 400);
+        }
+    }
+    
+    public function getSymptoms_get() {
+
+        $q = $this->db->query("CALL getSymptoms()");
 
         $this->response($q->result(), 200);
     }
