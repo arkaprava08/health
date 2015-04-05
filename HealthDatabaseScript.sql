@@ -61,6 +61,7 @@ BEGIN
 SELECT * FROM `symptomsIdToSymptomsName`;
 END$$
 
+
 ----------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------
 
@@ -108,7 +109,7 @@ CREATE TABLE `bodyTemperatureTypeIdToTypeName` (
 INSERT INTO `bodyTemperatureTypeIdToTypeName` 
 VALUES
 (1, "ORAL"),
-(2, "AUXILLARY");
+(2, "AXILLARY");
 
 
 --

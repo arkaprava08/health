@@ -20,33 +20,125 @@ class Health extends REST_Controller {
         echo "testing";
     }
 
-    public function getAction($bodytemperatue, $bp_sp, $bp_dp) {
+    public function getAction($data) {
 
-        $action = "All fine";
+        $age = $data["age"];
+        $bodyTemperature = $data["bodyTemperature"];
+        $bodyTemperatureTypeId = $data["bodyTemperatureTypeId"];
+        $bp_sp = $data["bp_sp"];
+        $bp_dp = $data["bp_dp"];
+
+        $action['BodyTemperature'] = "All fine";
+        $action['BloodPressure'] = "All fine";
         $consultation = 0;
 
-        if ($bodytemperatue > 100) {
-            $action = "You have high fever. Please visit doctor";
-            $consultation = 1;
-        } else if ($bodytemperatue < 90) {
-            $action = "You have low fever. Please visit doctor";
-            $consultation = 1;
+        switch ($bodyTemperatureTypeId) {
+            case 1:
+                if ($bodyTemperature < 95) {
+                    $action['BodyTemperature'] = [
+                        'detail' => "May have hypothermia. Please urgently visit doctor",
+                        'status' => 2
+                    ];
+                } else if ($bodyTemperature < 99) {
+                    $action['BodyTemperature'] = [
+                        'detail' => "Normal Body Temperature",
+                        'status' => 0
+                    ];
+                } else if ($bodyTemperature <= 102.2) {
+                    $action['BodyTemperature'] = [
+                        'detail' => "Low Grade Fever. Please visit doctor",
+                        'status' => 1
+                    ];
+                } else {
+                    $action['BodyTemperature'] = [
+                        'detail' => "High Grade Fever. Please Urgently Visit Doctor",
+                        'status' => 2
+                    ];
+                }
+
+                break;
+
+            case 2:
+                if ($bodyTemperature < 95) {
+                    $action['BodyTemperature'] = [
+                        'detail' => "May have hypothermia. Please urgently visit doctor",
+                        'status' => 2
+                    ];
+                } else if ($bodyTemperature < 98.5) {
+                    $action['BodyTemperature'] = [
+                        'detail' => "Normal Body Temperature",
+                        'status' => 0
+                    ];
+                } else if ($bodyTemperature <= 102.2) {
+                    $action['BodyTemperature'] = [
+                        'detail' => "Low Grade Fever. Please visit doctor",
+                        'status' => 1
+                    ];
+                } else {
+                    $action['BodyTemperature'] = [
+                        'detail' => "High Grade Fever. Please Urgently Visit Doctor",
+                        'status' => 2
+                    ];
+                }
+
+                break;
+
+            default:
+                break;
         }
 
-        if ($bp_sp > 60) {
-            $action = "You have high bloodpressure. Please visit doctor";
-            $consultation = 1;
-        } else if ($bp_sp < 40) {
-            $action = "You have low bloodpressure. Please visit doctor";
-            $consultation = 1;
-        }
+        if ($age > 17) {
+            //for BP SP
+            if ($bp_sp < 120) {
+                $action['BloodPressure'] = [
+                    'detail' => "Hypotension. Please urgently visit doctor",
+                    'status' => 4
+                ];
+            } else if ($bp_sp < 140) {
+                $action['BloodPressure'] = [
+                    'detail' => "Normal Pressure",
+                    'status' => 0
+                ];
+            } else if ($bp_sp < 160) {
+                $action['BloodPressure'] = [
+                    'detail' => "Grade 1  Hypertension Please visit doctor",
+                    'status' => 1
+                ];
+            } else if ($bp_sp < 180) {
+                $action['BloodPressure'] = [
+                    'detail' => "Grade 2 Hypertension. Please visit doctor",
+                    'status' => 2
+                ];
+            } else {
+                $action['BloodPressure'] = [
+                    'detail' => "Grade 3 Hypertension. Please visit doctor",
+                    'status' => 3
+                ];
+            }
 
-        if ($bp_dp > 60) {
-            $action = "You have high bloodpressure. Please visit doctor";
-            $consultation = 1;
-        } else if ($bp_dp < 40) {
-            $action = "You have low bloodpressure. Please visit doctor";
-            $consultation = 1;
+            //for BP DP
+            if ($bp_dp >= 90 && $bp_dp < 100) {
+                if ($action['BloodPressure']["status"] < 1) {
+                    $action['BloodPressure'] = [
+                        'detail' => "Grade 1 Hypertension. Please visit doctor",
+                        'status' => 3
+                    ];
+                }
+            } else if ($bp_dp < 110) {
+                if ($action['BloodPressure']["status"] < 2) {
+                    $action['BloodPressure'] = [
+                        'detail' => "Grade 2  Hypertension Please visit doctor",
+                        'status' => 2
+                    ];
+                }
+            } else {
+                if ($action['BloodPressure']["status"] < 3) {
+                    $action['BloodPressure'] = [
+                        'detail' => "Grade 3 Hypertension Please urgently visit doctor",
+                        'status' => 3
+                    ];
+                }
+            }
         }
 
         return ['action' => $action, 'consultation' => $consultation];
@@ -125,7 +217,7 @@ class Health extends REST_Controller {
 
                 $patientid = $this->request->body['patientid'];
                 $bodytemperature = $this->request->body['bodytemperature'];
-                $bodyTemperatureTypeId =  $this->request->body['bodyTemperatureTypeId'];
+                $bodyTemperatureTypeId = $this->request->body['bodyTemperatureTypeId'];
                 $bp_sp = $this->request->body['bp_sp'];
                 $bp_dp = $this->request->body['bp_dp'];
                 $symptoms = $this->request->body['symptoms'];
@@ -134,7 +226,20 @@ class Health extends REST_Controller {
                 $longitude = $this->request->body['longitude'];
                 $userid = $this->request->body['userid'];
 
-                $nextAction = $this->getAction($bodytemperature, $bp_sp, $bp_dp);
+                $getAge = $this->db->query("SELECT TIMESTAMPDIFF(YEAR, dob, NOW()) as age FROM `patients` pt WHERE pt.id = " . $patientid);
+                if ($getAge->num_rows() > 0) {
+                    $row = $getAge->row();
+                    $age = $row->age;
+                }
+                $data = [
+                    "age" => $age,
+                    "bodyTemperature" => $bodytemperature,
+                    "bodyTemperatureTypeId" => $bodyTemperatureTypeId,
+                    "bp_sp" => $bp_sp,
+                    "bp_dp" => $bp_dp
+                ];
+
+                $nextAction = $this->getAction($data);
 
                 $sql = "CALL insertWithPatientId(" . $patientid . ","
                         . $bodytemperature . ","
@@ -142,13 +247,13 @@ class Health extends REST_Controller {
                         . $bp_sp . ","
                         . $bp_dp . ",'" . $symptoms . "','" . $comment . "'," . $latitude . "," . $longitude . "," . $userid . "," . $nextAction['consultation'] . ")";
 
-
                 $query = $this->db->query($sql);
 
                 if ($query->num_rows() > 0) {
                     $row = $query->row();
 
                     $patientDataId = $row->patientDataId;
+
 
 
                     $this->response(array('error' => 'No error', 'patientDataId' => $patientDataId, 'action' => $nextAction['action']), 200);
@@ -169,7 +274,7 @@ class Health extends REST_Controller {
                 $weight = $this->request->body['weight'];
                 $address = $this->request->body['address'];
                 $bodytemperature = $this->request->body['bodytemperature'];
-                $bodyTemperatureTypeId =  $this->request->body['bodyTemperatureTypeId'];
+                $bodyTemperatureTypeId = $this->request->body['bodyTemperatureTypeId'];
                 $bp_sp = $this->request->body['bp_sp'];
                 $bp_dp = $this->request->body['bp_dp'];
                 $symptoms = $this->request->body['symptoms'];
@@ -187,7 +292,15 @@ class Health extends REST_Controller {
 //                    $this->response(array('error' => 'Data already exists'), 400);
 //                } else {
 
-                $nextAction = $this->getAction($bodytemperature, $bp_sp, $bp_dp);
+                $data = [
+                    "age" => date_diff(date_create($dob), date_create('today'))->y,
+                    "bodyTemperature" => $bodytemperature,
+                    "bodyTemperatureTypeId" => $bodyTemperatureTypeId,
+                    "bp_sp" => $bp_sp,
+                    "bp_dp" => $bp_dp
+                ];
+
+                $nextAction = $this->getAction($data);
 
                 $sql = "CALL insertWithoutPatientId('" . $name . "', '" . $dob . "','" . $gender . "'," . $height . "," . $weight . ",'" . $address . "',"
                         . $bodytemperature . ","
@@ -202,6 +315,8 @@ class Health extends REST_Controller {
 
                     $patientId = $row->patientId;
                     $patientDataId = $row->patientDataId;
+
+
 
                     $this->response(array('error' => 'No error'
                         , 'patientId' => $patientId
@@ -265,7 +380,7 @@ class Health extends REST_Controller {
             $this->response(array('error' => 'Data not provided'), 400);
         }
     }
-    
+
     public function getSymptoms_get() {
 
         $q = $this->db->query("CALL getSymptoms()");
