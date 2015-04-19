@@ -39,6 +39,12 @@ class Health extends REST_Controller {
                         'detail' => "May have hypothermia. Please urgently visit doctor",
                         'status' => 2
                     ];
+                    $consultation = 1;
+                } else if ($bodyTemperature < 97.5) {
+                    $action['BodyTemperature'] = [
+                        'detail' => "Data successfully recorded",
+                        'status' => -1
+                    ];
                 } else if ($bodyTemperature < 99) {
                     $action['BodyTemperature'] = [
                         'detail' => "Normal Body Temperature",
@@ -49,11 +55,13 @@ class Health extends REST_Controller {
                         'detail' => "Low Grade Fever. Please visit doctor",
                         'status' => 1
                     ];
+                    $consultation = 1;
                 } else {
                     $action['BodyTemperature'] = [
                         'detail' => "High Grade Fever. Please Urgently Visit Doctor",
                         'status' => 2
                     ];
+                    $consultation = 1;
                 }
 
                 break;
@@ -63,6 +71,12 @@ class Health extends REST_Controller {
                     $action['BodyTemperature'] = [
                         'detail' => "May have hypothermia. Please urgently visit doctor",
                         'status' => 2
+                    ];
+                    $consultation = 1;
+                } else if ($bodyTemperature < 97) {
+                    $action['BodyTemperature'] = [
+                        'detail' => "Data successfully recorded",
+                        'status' => -1
                     ];
                 } else if ($bodyTemperature < 98.5) {
                     $action['BodyTemperature'] = [
@@ -74,11 +88,13 @@ class Health extends REST_Controller {
                         'detail' => "Low Grade Fever. Please visit doctor",
                         'status' => 1
                     ];
+                    $consultation = 1;
                 } else {
                     $action['BodyTemperature'] = [
                         'detail' => "High Grade Fever. Please Urgently Visit Doctor",
                         'status' => 2
                     ];
+                    $consultation = 1;
                 }
 
                 break;
@@ -89,10 +105,16 @@ class Health extends REST_Controller {
 
         if ($age > 17) {
             //for BP SP
-            if ($bp_sp < 120) {
+            if ($bp_sp < 90) {
                 $action['BloodPressure'] = [
                     'detail' => "Hypotension. Please urgently visit doctor",
                     'status' => 4
+                ];
+                $consultation = 1;
+            } else if ($bp_sp < 120) {
+                $action['BloodPressure'] = [
+                    'detail' => "Data successfully recorded",
+                    'status' => -1
                 ];
             } else if ($bp_sp < 140) {
                 $action['BloodPressure'] = [
@@ -104,25 +126,36 @@ class Health extends REST_Controller {
                     'detail' => "Grade 1  Hypertension Please visit doctor",
                     'status' => 1
                 ];
+                $consultation = 1;
             } else if ($bp_sp < 180) {
                 $action['BloodPressure'] = [
                     'detail' => "Grade 2 Hypertension. Please visit doctor",
                     'status' => 2
                 ];
+                $consultation = 1;
             } else {
                 $action['BloodPressure'] = [
                     'detail' => "Grade 3 Hypertension. Please visit doctor",
                     'status' => 3
                 ];
+                $consultation = 1;
             }
 
             //for BP DP
-            if ($bp_dp >= 90 && $bp_dp < 100) {
+            if ($bp_dp >= 80 && $bp_dp < 90) {
+                if ($action['BloodPressure']["status"] < 0) {
+                    $action['BloodPressure'] = [
+                        'detail' => "Normal Pressure",
+                        'status' => 0
+                    ];
+                }
+            } else if ($bp_dp < 100) {
                 if ($action['BloodPressure']["status"] < 1) {
                     $action['BloodPressure'] = [
                         'detail' => "Grade 1 Hypertension. Please visit doctor",
                         'status' => 3
                     ];
+                    $consultation = 1;
                 }
             } else if ($bp_dp < 110) {
                 if ($action['BloodPressure']["status"] < 2) {
@@ -130,6 +163,7 @@ class Health extends REST_Controller {
                         'detail' => "Grade 2  Hypertension Please visit doctor",
                         'status' => 2
                     ];
+                    $consultation = 1;
                 }
             } else {
                 if ($action['BloodPressure']["status"] < 3) {
@@ -137,6 +171,7 @@ class Health extends REST_Controller {
                         'detail' => "Grade 3 Hypertension Please urgently visit doctor",
                         'status' => 3
                     ];
+                    $consultation = 1;
                 }
             }
         }
@@ -337,7 +372,12 @@ class Health extends REST_Controller {
         }
 
         $id = $this->get('id');
-        $fetch = "SELECT * FROM patientdata WHERE patientid=" . $id;
+        $fetch = "SELECT 
+                pd.`patientid`, pd.`bodytemperature`, pd.`bodyTemperatureTypeId`, pd.`bp_sp`, pd.`bp_dp`, pd.`symptoms`, pd.`comment`, pd.`insertedDate`, a.`actiondetails`
+                 FROM patientdata pd 
+                 LEFT OUTER JOIN action a
+                 ON pd.`id` = a.`patientdataid`
+                 WHERE patientid=" . $id;
 
         $q = $this->db->query($fetch);
 
