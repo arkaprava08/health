@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS `patientdata`;
 DROP TABLE IF EXISTS `patients`;
 DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `bodyTemperatureTypeIdToTypeName`;
+DROP TABLE IF EXISTS `symptomSpecificType`;
 ----------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------
 
@@ -70,32 +71,50 @@ END$$
 DELIMITER ;
 
 --
+-- Table structure for table `symptomsSpecificType`
+--
+
+CREATE TABLE `symptomSpecificType` (
+	`id` int(12) PRIMARY KEY,
+   `type` VARCHAR(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT INTO `symptomSpecificType`
+VALUES
+(0, "Common"),
+(1, "Male"),
+(2, "Female");
+
+--
 -- Table structure for table `symptomsIdToSymptomsName`
 --
 
 CREATE TABLE `symptomsIdToSymptomsName` (
 	`id` int(12) PRIMARY KEY,
    `symptom` VARCHAR(100) NOT NULL,
-   `symptomHindi` VARCHAR(100) NOT NULL
+   `symptomHindi` VARCHAR(100) NOT NULL,
+   `symptomSpecificTypeId` INT(2) NOT NULL,
+   FOREIGN KEY (symptomSpecificTypeId) REFERENCES
+   symptomSpecificType (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
 INSERT INTO `symptomsIdToSymptomsName`
 VALUES
-(1,"Cough","khansi"),
-(2,"Chills","thand lag kar kampkapi ana"),
-(3,"Pain in abdomen","pet mein dard"),
-(4,"Nausea and vomiting","jee michlana aur ulti"),
-(5,"Diarrhoea","dast"),
-(6,"Body ache and fatigue","sharir mein dard aur thakan"),
-(7,"Weight loss in recent past","wajan kam hua hai kya pichle kuch dino mein"),
-(8,"Bruises on body","sarir par lal nisan or chakte"),
-(9,"Dizziness and blurred vision","chakkar and aur dundhla dikhai dena"),
-(10,"Bone and joint pain","jodo mein dard"),
-(11,"Difficulty in breathing","sans  lene mein taklif"),
-(12,"Decreased appetite","bhook kam hona"),
-(13,"Urinary complaints like burning micturition","pesab mein taklif jaise pesab mein jalan"),
-(14,"Gynecological complaints like white discharge","safed pani ka jana");
+(1,"Cough","khansi", 0),
+(2,"Chills","thand lag kar kampkapi ana", 0),
+(3,"Pain in abdomen","pet mein dard", 0),
+(4,"Nausea and vomiting","jee michlana aur ulti", 0),
+(5,"Diarrhoea","dast", 0),
+(6,"Body ache and fatigue","sharir mein dard aur thakan", 0),
+(7,"Weight loss in recent past","wajan kam hua hai kya pichle kuch dino mein", 0),
+(8,"Bruises on body","sarir par lal nisan or chakte", 0),
+(9,"Dizziness and blurred vision","chakkar and aur dundhla dikhai dena", 0),
+(10,"Bone and joint pain","jodo mein dard", 0),
+(11,"Difficulty in breathing","sans  lene mein taklif", 0),
+(12,"Decreased appetite","bhook kam hona", 0),
+(13,"Urinary complaints like burning micturition","pesab mein taklif jaise pesab mein jalan", 0),
+(14,"Gynecological complaints like white discharge","safed pani ka jana", 2);
 
 --
 -- Table structure for table `bodyTemperatureTypeIdToTypeName`
